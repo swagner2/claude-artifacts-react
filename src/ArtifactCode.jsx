@@ -26,6 +26,7 @@ const CustomerRetentionCalculator = () => {
   
   // State for UI toggles
   const [showCallInfo, setShowCallInfo] = useState(true);
+  const [showSaveSection, setShowSaveSection] = useState(true);
   
   // Calculated results
   const [results, setResults] = useState({
@@ -220,22 +221,40 @@ const CustomerRetentionCalculator = () => {
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Customer Retention Calculator with Klaviyo Data</h1>
-        <button
-          onClick={() => setShowCallInfo(!showCallInfo)}
-          className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-        >
-          {showCallInfo ? (
-            <>
-              <EyeOff className="h-4 w-4" />
-              Hide Call Info
-            </>
-          ) : (
-            <>
-              <Eye className="h-4 w-4" />
-              Show Call Info
-            </>
-          )}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSaveSection(!showSaveSection)}
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 rounded-md transition-colors"
+          >
+            {showSaveSection ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Hide Save Section
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4" />
+                Show Save Section
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => setShowCallInfo(!showCallInfo)}
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+          >
+            {showCallInfo ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Hide Call Info
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4" />
+                Show Call Info
+              </>
+            )}
+          </button>
+        </div>
       </div>
       
       {/* Call Information - Collapsible */}
@@ -582,9 +601,18 @@ const CustomerRetentionCalculator = () => {
         </div>
       </div>
       
-      {/* Save to Google Sheets Section */}
-      <div className="mt-8 bg-white p-6 rounded shadow">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Save Your Analysis</h2>
+      {/* Save to Google Sheets Section - Collapsible */}
+      {showSaveSection && (
+        <div className="mt-8 bg-white p-6 rounded shadow transition-all duration-300">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-700">Save Your Analysis</h2>
+            <button
+              onClick={() => setShowSaveSection(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+          </div>
         
         <div className="space-y-4">
           <div>
@@ -675,7 +703,7 @@ function doPost(e) {
 }`}</pre>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
