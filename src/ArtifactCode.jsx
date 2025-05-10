@@ -219,12 +219,12 @@ const CustomerRetentionCalculator = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Customer Retention Calculator with Klaviyo Data</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowSaveSection(!showSaveSection)}
-            className="flex items-center gap-2 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 rounded-md transition-colors"
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-green-100 text-green-700 hover:bg-green-200 rounded-md transition-colors"
           >
             {showSaveSection ? (
               <>
@@ -240,7 +240,7 @@ const CustomerRetentionCalculator = () => {
           </button>
           <button
             onClick={() => setShowCallInfo(!showCallInfo)}
-            className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
           >
             {showCallInfo ? (
               <>
