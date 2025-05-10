@@ -4,7 +4,7 @@ const CustomerRetentionCalculator = () => {
   // State for input values
   const [customerBase, setCustomerBase] = useState(1000);
   const [multiPurchaseRate, setMultiPurchaseRate] = useState(20);
-  const [inactiveCustomers, setInactiveCustomers] = useState(30);
+  const [inactiveCustomersCount, setInactiveCustomersCount] = useState(300);
   const [aov, setAov] = useState(100);
   const [purchaseFrequency, setPurchaseFrequency] = useState(2);
   const [ltv, setLtv] = useState(200);
@@ -39,16 +39,17 @@ const CustomerRetentionCalculator = () => {
   // Calculate results when inputs change
   useEffect(() => {
     const currentMultiPurchasers = Math.round(customerBase * (multiPurchaseRate / 100));
-    const currentInactive = Math.round(customerBase * (inactiveCustomers / 100));
+    const currentInactive = inactiveCustomersCount;
+    const currentInactiveRate = (currentInactive / customerBase) * 100;
     const currentActiveCustomers = customerBase - currentInactive;
     const currentAnnualRevenue = currentActiveCustomers * aov * purchaseFrequency;
     const currentTotalLtv = customerBase * ltv;
     
     const improvedMultiPurchaseRate = Math.min(multiPurchaseRate + multiPurchaseImprovement, 100);
     const improvedMultiPurchasers = Math.round(customerBase * (improvedMultiPurchaseRate / 100));
-    const improvedInactiveRate = Math.max(inactiveCustomers - churnReduction, 0);
-    const improvedInactive = Math.round(customerBase * (improvedInactiveRate / 100));
-    const improvedActiveCustomers = customerBase - improvedInactive;
+    const improvedInactiveCount = Math.max(currentInactive - Math.round((churnReduction / 100) * customerBase), 0);
+    const improvedInactiveRate = (improvedInactiveCount / customerBase) * 100;
+    const improvedActiveCustomers = customerBase - improvedInactiveCount;
     const improvedPurchaseFreq = purchaseFrequency + purchaseFreqImprovement;
     const improvedAnnualRevenue = improvedActiveCustomers * aov * improvedPurchaseFreq;
     
@@ -62,18 +63,20 @@ const CustomerRetentionCalculator = () => {
       currentState: {
         multiPurchaseCustomers: currentMultiPurchasers,
         inactiveCustomers: currentInactive,
+        inactiveRate: currentInactiveRate.toFixed(1),
         annualRevenue: currentAnnualRevenue,
         totalLtv: currentTotalLtv,
       },
       improvedState: {
         multiPurchaseCustomers: improvedMultiPurchasers,
-        inactiveCustomers: improvedInactive,
+        inactiveCustomers: improvedInactiveCount,
+        inactiveRate: improvedInactiveRate.toFixed(1),
         annualRevenue: improvedAnnualRevenue,
         totalLtv: improvedTotalLtv,
       },
       impact: {
         additionalCustomers: improvedMultiPurchasers - currentMultiPurchasers,
-        reducedChurn: currentInactive - improvedInactive,
+        reducedChurn: currentInactive - improvedInactiveCount,
         revenueIncrease: improvedAnnualRevenue - currentAnnualRevenue,
         ltvIncrease: improvedTotalLtv - currentTotalLtv,
       }
@@ -81,7 +84,7 @@ const CustomerRetentionCalculator = () => {
   }, [
     customerBase, 
     multiPurchaseRate, 
-    inactiveCustomers, 
+    inactiveCustomersCount, 
     aov, 
     purchaseFrequency, 
     ltv,
@@ -102,7 +105,7 @@ const CustomerRetentionCalculator = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Customer Retention Calculator</h1>
+                <h1 className="text-2xl font-bold text-gray-800 mb-6">Customer Retention Calculator with Klaviyo Data</h1>
       
       <div className="grid md:grid-cols-2 gap-6">
         {/* Current Metrics Section */}
@@ -136,14 +139,17 @@ const CustomerRetentionCalculator = () => {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Inactive Customers (%) - No purchase in 12+ months
+                Inactive Customers (Count) - From Klaviyo
               </label>
               <input
                 type="number"
-                value={inactiveCustomers}
-                onChange={(e) => setInactiveCustomers(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                value={inactiveCustomersCount}
+                onChange={(e) => setInactiveCustomersCount(Math.max(0, parseInt(e.target.value) || 0))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Customers with no purchase in 12+ months (from Klaviyo)
+              </p>
             </div>
             
             <div>
@@ -219,9 +225,12 @@ const CustomerRetentionCalculator = () => {
               <input
                 type="number"
                 value={churnReduction}
-                onChange={(e) => setChurnReduction(Math.min(inactiveCustomers, Math.max(0, parseFloat(e.target.value) || 0)))}
+                onChange={(e) => setChurnReduction(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                % of total customers we can reactivate from inactive status
+              </p>
             </div>
             
             <div>
@@ -284,7 +293,7 @@ const CustomerRetentionCalculator = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Inactive Customers:</span>
-                <span className="font-semibold">{results.currentState.inactiveCustomers.toLocaleString()} ({inactiveCustomers}%)</span>
+                <span className="font-semibold">{results.currentState.inactiveCustomers.toLocaleString()} ({results.currentState.inactiveRate}%)</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Annual Revenue:</span>
@@ -306,7 +315,7 @@ const CustomerRetentionCalculator = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Inactive Customers:</span>
-                <span className="font-semibold">{results.improvedState.inactiveCustomers.toLocaleString()} ({(inactiveCustomers - churnReduction).toFixed(1)}%)</span>
+                <span className="font-semibold">{results.improvedState.inactiveCustomers.toLocaleString()} ({results.improvedState.inactiveRate}%)</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Annual Revenue:</span>
