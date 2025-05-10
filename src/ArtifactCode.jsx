@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 
 const CustomerRetentionCalculator = () => {
   // State for input values
@@ -13,6 +14,15 @@ const CustomerRetentionCalculator = () => {
   const [multiPurchaseImprovement, setMultiPurchaseImprovement] = useState(5);
   const [churnReduction, setChurnReduction] = useState(5);
   const [purchaseFreqImprovement, setPurchaseFreqImprovement] = useState(0.5);
+  
+  // Client info for Google Sheets
+  const [clientName, setClientName] = useState('');
+  const [salesRepName, setSalesRepName] = useState('');
+  const [callDate, setCallDate] = useState(new Date().toISOString().split('T')[0]);
+  const [googleSheetUrl, setGoogleSheetUrl] = useState('');
+  
+  // State for save status
+  const [saveStatus, setSaveStatus] = useState('');
   
   // Calculated results
   const [results, setResults] = useState({
@@ -103,9 +113,151 @@ const CustomerRetentionCalculator = () => {
     }).format(value);
   };
 
+  // Save to Google Sheets
+  const saveToGoogleSheets = async () => {
+    if (!googleSheetUrl) {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(''), 2000);
+      return;
+    }
+
+    const data = {
+      timestamp: new Date().toISOString(),
+      callDate: callDate,
+      salesRep: salesRepName,
+      clientName: clientName,
+      customerBase: customerBase,
+      multiPurchaseRate: multiPurchaseRate,
+      inactiveCustomersCount: inactiveCustomersCount,
+      aov: aov,
+      purchaseFrequency: purchaseFrequency,
+      ltv: ltv,
+      multiPurchaseImprovement: multiPurchaseImprovement,
+      churnReduction: churnReduction,
+      purchaseFreqImprovement: purchaseFreqImprovement,
+      currentMultiPurchaseCustomers: results.currentState.multiPurchaseCustomers,
+      currentInactiveCustomers: results.currentState.inactiveCustomers,
+      currentAnnualRevenue: results.currentState.annualRevenue,
+      currentTotalLtv: results.currentState.totalLtv,
+      improvedMultiPurchaseCustomers: results.improvedState.multiPurchaseCustomers,
+      improvedInactiveCustomers: results.improvedState.inactiveCustomers,
+      improvedAnnualRevenue: results.improvedState.annualRevenue,
+      improvedTotalLtv: results.improvedState.totalLtv,
+      additionalCustomers: results.impact.additionalCustomers,
+      reducedChurn: results.impact.reducedChurn,
+      revenueIncrease: results.impact.revenueIncrease,
+      ltvIncrease: results.impact.ltvIncrease
+    };
+
+    try {
+      // Create a FormData object for Google Apps Script
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(data)) {
+        formData.append(key, value);
+      }
+
+      const response = await fetch(googleSheetUrl, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus(''), 2000);
+      } else {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus(''), 2000);
+      }
+    } catch (error) {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(''), 2000);
+    }
+  };
+
+  // Download as CSV
+  const downloadAsCSV = () => {
+    const csvData = [
+      ['Call Information'],
+      ['Date', callDate],
+      ['Sales Rep', salesRepName],
+      ['Client Name', clientName],
+      [''],
+      ['Current Metrics'],
+      ['Customer Base', customerBase],
+      ['Multi-Purchase Rate (%)', multiPurchaseRate],
+      ['Inactive Customers', inactiveCustomersCount],
+      ['AOV', aov],
+      ['Purchase Frequency', purchaseFrequency],
+      ['LTV', ltv],
+      [''],
+      ['Improvement Goals'],
+      ['Multi-Purchase Rate Improvement (%)', multiPurchaseImprovement],
+      ['Churn Reduction (%)', churnReduction],
+      ['Purchase Freq Improvement', purchaseFreqImprovement],
+      [''],
+      ['Results'],
+      ['Metric', 'Current', 'Improved', 'Impact'],
+      ['Multi-Purchase Customers', results.currentState.multiPurchaseCustomers, results.improvedState.multiPurchaseCustomers, results.impact.additionalCustomers],
+      ['Inactive Customers', results.currentState.inactiveCustomers, results.improvedState.inactiveCustomers, results.impact.reducedChurn],
+      ['Annual Revenue', results.currentState.annualRevenue, results.improvedState.annualRevenue, results.impact.revenueIncrease],
+      ['Total LTV', results.currentState.totalLtv, results.improvedState.totalLtv, results.impact.ltvIncrease]
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `retention-analysis-${clientName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${callDate}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6">Customer Retention Calculator with Klaviyo Data</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Customer Retention Calculator with Klaviyo Data</h1>
+      
+      {/* Call Information */}
+      <div className="bg-white p-4 rounded shadow mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">Call Information</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Client Name
+            </label>
+            <input
+              type="text"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Enter client name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sales Rep Name
+            </label>
+            <input
+              type="text"
+              value={salesRepName}
+              onChange={(e) => setSalesRepName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Enter your name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Call Date
+            </label>
+            <input
+              type="date"
+              value={callDate}
+              onChange={(e) => setCallDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+        </div>
+      </div>
       
       <div className="grid md:grid-cols-2 gap-6">
         {/* Current Metrics Section */}
@@ -135,6 +287,9 @@ const CustomerRetentionCalculator = () => {
                 onChange={(e) => setMultiPurchaseRate(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                This represents {Math.round(customerBase * (multiPurchaseRate / 100)).toLocaleString()} customers
+              </p>
             </div>
             
             <div>
@@ -148,7 +303,7 @@ const CustomerRetentionCalculator = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Customers with no purchase in 12+ months (from Klaviyo)
+                Customers with no purchase in 12+ months ({customerBase > 0 ? ((inactiveCustomersCount / customerBase) * 100).toFixed(1) : '0'}% of total customer base)
               </p>
             </div>
             
@@ -198,6 +353,28 @@ const CustomerRetentionCalculator = () => {
                 />
               </div>
             </div>
+            
+            <div className="mt-4 bg-gray-100 p-3 rounded-md">
+              <h3 className="text-sm font-medium text-gray-700 mb-1">Inactive Customer Summary</h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-gray-600">Count:</span>
+                  <span className="ml-1 font-semibold">{inactiveCustomersCount.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Percentage:</span>
+                  <span className="ml-1 font-semibold">{customerBase > 0 ? ((inactiveCustomersCount / customerBase) * 100).toFixed(1) : '0'}%</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Active Customers:</span>
+                  <span className="ml-1 font-semibold">{(customerBase - inactiveCustomersCount).toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Active Rate:</span>
+                  <span className="ml-1 font-semibold">{customerBase > 0 ? (100 - (inactiveCustomersCount / customerBase) * 100).toFixed(1) : '0'}%</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -216,6 +393,9 @@ const CustomerRetentionCalculator = () => {
                 onChange={(e) => setMultiPurchaseImprovement(Math.min(100 - multiPurchaseRate, Math.max(0, parseFloat(e.target.value) || 0)))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                This would add {Math.round(customerBase * (multiPurchaseImprovement / 100)).toLocaleString()} multi-purchase customers
+              </p>
             </div>
             
             <div>
@@ -229,7 +409,7 @@ const CustomerRetentionCalculator = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
               <p className="text-xs text-gray-500 mt-1">
-                % of total customers we can reactivate from inactive status
+                This would reactivate {Math.round((churnReduction / 100) * customerBase).toLocaleString()} customers ({inactiveCustomersCount > 0 ? Math.round((Math.round((churnReduction / 100) * customerBase) / inactiveCustomersCount) * 100) : 0}% of inactive base)
               </p>
             </div>
             
@@ -244,6 +424,9 @@ const CustomerRetentionCalculator = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 step="0.1"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                From {purchaseFrequency.toFixed(1)} to {(purchaseFrequency + purchaseFreqImprovement).toFixed(1)} purchases per year ({purchaseFrequency > 0 ? ((purchaseFreqImprovement / purchaseFrequency) * 100).toFixed(0) : '0'}% increase)
+              </p>
             </div>
             
             <div className="mt-8 bg-blue-50 p-4 rounded-md">
@@ -334,21 +517,25 @@ const CustomerRetentionCalculator = () => {
           <div className="bg-green-50 p-4 rounded-lg">
             <h4 className="text-sm font-medium text-green-800">Additional Multi-Purchase Customers</h4>
             <p className="text-2xl font-bold text-green-700 mt-2">+{results.impact.additionalCustomers.toLocaleString()}</p>
+            <p className="text-xs text-green-600">{results.currentState.multiPurchaseCustomers > 0 ? ((results.impact.additionalCustomers / results.currentState.multiPurchaseCustomers) * 100).toFixed(1) : '0'}% increase</p>
           </div>
           
           <div className="bg-green-50 p-4 rounded-lg">
             <h4 className="text-sm font-medium text-green-800">Reactivated Customers</h4>
             <p className="text-2xl font-bold text-green-700 mt-2">+{results.impact.reducedChurn.toLocaleString()}</p>
+            <p className="text-xs text-green-600">{inactiveCustomersCount > 0 ? ((results.impact.reducedChurn / inactiveCustomersCount) * 100).toFixed(1) : '0'}% of inactive base</p>
           </div>
           
           <div className="bg-green-50 p-4 rounded-lg">
             <h4 className="text-sm font-medium text-green-800">Annual Revenue Increase</h4>
             <p className="text-2xl font-bold text-green-700 mt-2">{formatCurrency(results.impact.revenueIncrease)}</p>
+            <p className="text-xs text-green-600">{results.currentState.annualRevenue > 0 ? ((results.impact.revenueIncrease / results.currentState.annualRevenue) * 100).toFixed(1) : '0'}% growth</p>
           </div>
           
           <div className="bg-green-50 p-4 rounded-lg">
             <h4 className="text-sm font-medium text-green-800">Total LTV Increase</h4>
             <p className="text-2xl font-bold text-green-700 mt-2">{formatCurrency(results.impact.ltvIncrease)}</p>
+            <p className="text-xs text-green-600">{results.currentState.totalLtv > 0 ? ((results.impact.ltvIncrease / results.currentState.totalLtv) * 100).toFixed(1) : '0'}% growth</p>
           </div>
         </div>
         
@@ -357,10 +544,105 @@ const CustomerRetentionCalculator = () => {
           <h3 className="text-lg font-medium text-blue-800 mb-3">Return on Investment</h3>
           <p className="text-blue-700 mb-4">
             Based on our pricing model, your investment in our retention solution would generate a <span className="font-bold text-blue-800">
-              {Math.round((results.impact.revenueIncrease / (results.currentState.annualRevenue * 0.02)) * 100)}% ROI
+              {results.currentState.annualRevenue > 0 ? Math.round((results.impact.revenueIncrease / (results.currentState.annualRevenue * 0.02)) * 100) : '0'}% ROI
             </span> in the first year alone.
           </p>
           <p className="text-sm text-blue-600">*Assumption: Our solution cost is approximately 2% of your current annual revenue</p>
+        </div>
+      </div>
+      
+      {/* Save to Google Sheets Section */}
+      <div className="mt-8 bg-white p-6 rounded shadow">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Save Your Analysis</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Google Apps Script Web App URL
+            </label>
+            <input
+              type="url"
+              value={googleSheetUrl}
+              onChange={(e) => setGoogleSheetUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="https://script.google.com/macros/s/your-script-id/exec"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Paste your Google Apps Script Web App URL here to save data directly to sheets
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={saveToGoogleSheets}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              disabled={!googleSheetUrl || !clientName}
+            >
+              <Download className="h-4 w-4" />
+              Save to Google Sheets
+            </button>
+            
+            <button
+              onClick={downloadAsCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              <Download className="h-4 w-4" />
+              Download CSV
+            </button>
+          </div>
+          
+          {saveStatus && (
+            <div className={`text-sm ${saveStatus === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              {saveStatus === 'success' ? '✓ Data saved successfully!' : '✗ Error saving data. Please check your URL and try again.'}
+            </div>
+          )}
+          
+          <div className="mt-4 p-4 bg-gray-50 rounded-md">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">How to set up Google Sheets integration:</h3>
+            <ol className="text-xs text-gray-600 space-y-1">
+              <li>1. Open Google Sheets and create a new spreadsheet</li>
+              <li>2. Go to Extensions → Apps Script</li>
+              <li>3. Replace the code with the Google Apps Script code (see instructions below)</li>
+              <li>4. Deploy as a Web App and copy the URL</li>
+              <li>5. Paste the URL above to enable saving</li>
+            </ol>
+          </div>
+          
+          <div className="mt-4 p-4 bg-gray-700 text-gray-100 rounded-md text-xs overflow-x-auto">
+            <pre className="whitespace-pre-wrap">{`// Google Apps Script Code to paste in your Apps Script editor
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Retention Analysis') || 
+                SpreadsheetApp.getActiveSpreadsheet().insertSheet('Retention Analysis');
+  
+  // If this is the first time, add headers
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      'Timestamp', 'Call Date', 'Sales Rep', 'Client', 'Customer Base', 'Multi-Purchase Rate', 
+      'Inactive Customers', 'AOV', 'Purchase Frequency', 'LTV', 'Multi-Purchase Improvement', 
+      'Churn Reduction', 'Purchase Freq Improvement', 'Current Multi-Purchase Customers', 
+      'Current Inactive', 'Current Annual Revenue', 'Current Total LTV', 'Improved Multi-Purchase', 
+      'Improved Inactive', 'Improved Annual Revenue', 'Improved Total LTV', 'Additional Customers', 
+      'Reduced Churn', 'Revenue Increase', 'LTV Increase'
+    ]);
+  }
+  
+  // Parse the form data
+  const data = e.parameter;
+  
+  // Append the new row
+  sheet.appendRow([
+    data.timestamp, data.callDate, data.salesRep, data.clientName, data.customerBase,
+    data.multiPurchaseRate, data.inactiveCustomersCount, data.aov, data.purchaseFrequency,
+    data.ltv, data.multiPurchaseImprovement, data.churnReduction, data.purchaseFreqImprovement,
+    data.currentMultiPurchaseCustomers, data.currentInactiveCustomers, data.currentAnnualRevenue,
+    data.currentTotalLtv, data.improvedMultiPurchaseCustomers, data.improvedInactiveCustomers,
+    data.improvedAnnualRevenue, data.improvedTotalLtv, data.additionalCustomers,
+    data.reducedChurn, data.revenueIncrease, data.ltvIncrease
+  ]);
+  
+  return ContentService.createTextOutput('Success').setMimeType(ContentService.MimeType.TEXT);
+}`}</pre>
+          </div>
         </div>
       </div>
     </div>
