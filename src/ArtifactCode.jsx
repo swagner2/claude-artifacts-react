@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
 
 const CustomerRetentionCalculator = () => {
   // State for input values
@@ -23,6 +23,9 @@ const CustomerRetentionCalculator = () => {
   
   // State for save status
   const [saveStatus, setSaveStatus] = useState('');
+  
+  // State for UI toggles
+  const [showCallInfo, setShowCallInfo] = useState(true);
   
   // Calculated results
   const [results, setResults] = useState({
@@ -215,49 +218,77 @@ const CustomerRetentionCalculator = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Customer Retention Calculator with Klaviyo Data</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Customer Retention Calculator with Klaviyo Data</h1>
+        <button
+          onClick={() => setShowCallInfo(!showCallInfo)}
+          className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+        >
+          {showCallInfo ? (
+            <>
+              <EyeOff className="h-4 w-4" />
+              Hide Call Info
+            </>
+          ) : (
+            <>
+              <Eye className="h-4 w-4" />
+              Show Call Info
+            </>
+          )}
+        </button>
+      </div>
       
-      {/* Call Information */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Call Information</h2>
-        <div className="grid md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Client Name
-            </label>
-            <input
-              type="text"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Enter client name"
-            />
+      {/* Call Information - Collapsible */}
+      {showCallInfo && (
+        <div className="bg-white p-4 rounded shadow mb-6 transition-all duration-300">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-700">Call Information</h2>
+            <button
+              onClick={() => setShowCallInfo(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sales Rep Name
-            </label>
-            <input
-              type="text"
-              value={salesRepName}
-              onChange={(e) => setSalesRepName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Enter your name"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Call Date
-            </label>
-            <input
-              type="date"
-              value={callDate}
-              onChange={(e) => setCallDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Client Name
+              </label>
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Enter client name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sales Rep Name
+              </label>
+              <input
+                type="text"
+                value={salesRepName}
+                onChange={(e) => setSalesRepName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Enter your name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Call Date
+              </label>
+              <input
+                type="date"
+                value={callDate}
+                onChange={(e) => setCallDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       <div className="grid md:grid-cols-2 gap-6">
         {/* Current Metrics Section */}
